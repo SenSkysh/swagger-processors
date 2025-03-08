@@ -60,19 +60,25 @@ class GenerateSchemaProperties
         $schema->properties = Generator::isDefault($schema->properties) ? [] : $schema->properties;
         $schema->required = Generator::isDefault($schema->required) ? [] : $schema->required;
 
+        $resultProperties = [];
+
         foreach ($classProperties as $classProperty) {
-            $alreadyDeclared = (bool)$this->arrayFirst($schema->properties, function (Property $value) use ($classProperty) {
-                return $value->property === $classProperty->getName();
+            $alreadyDeclaredProperty = $this->arrayFirst($schema->properties, function (Property $schemaProp) use ($classProperty) {
+                return rtrim($schemaProp->property, '[]') === $classProperty->getName();
             });
-            if ($alreadyDeclared) {
+            if ($alreadyDeclaredProperty) {
+                $resultProperties[] = $alreadyDeclaredProperty;
                 continue;
             }
 
-            $schema->properties[] = $properties[$classProperty->getName()];
+            $resultProperties[] = $properties[$classProperty->getName()];
             if (!$this->propertyHasDefault($classProperty)) {
                 $schema->required[] = $classProperty->getName();
             }
         }
+
+        $schema->properties = $resultProperties;
+        $schema->required = array_unique($schema->required);
 
 
         return $schema->properties;

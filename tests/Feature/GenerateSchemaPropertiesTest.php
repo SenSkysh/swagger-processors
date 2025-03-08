@@ -6,17 +6,20 @@ namespace SenSkysh\SwaggerProcessors\Tests\Feature;
 use OpenApi\Analysis;
 use OpenApi\Annotations\OpenApi;
 use OpenApi\Annotations\Property;
+use OpenApi\Annotations\Schema;
+use OpenApi\Attributes\Items;
 use OpenApi\Context;
 use OpenApi\Generator;
 use OpenApi\Processors\AugmentSchemas;
 use OpenApi\Processors\MergeIntoComponents;
 use OpenApi\Processors\MergeIntoOpenApi;
 use SenSkysh\SwaggerProcessors\Processors\GenerateSchemaProperties;
+use SenSkysh\SwaggerProcessors\Tests\Fixtures\FilesForm;
 use SenSkysh\SwaggerProcessors\Tests\Fixtures\PaginationMeta;
 
 class GenerateSchemaPropertiesTest extends TestCase
 {
-    public function test_generate_schema(): void
+    public function test_generate(): void
     {
         $analysis = $this->analysisFromFixtures([PaginationMeta::class]);
         $analysis->process([
@@ -25,7 +28,7 @@ class GenerateSchemaPropertiesTest extends TestCase
             new AugmentSchemas(),
         ]);
 
-        $schema = $analysis->openapi->components->schemas[0];
+        $schema = $analysis->getSchemaForSource(PaginationMeta::class);
 
         $this->assertSame(Generator::UNDEFINED, $schema->properties);
 
@@ -61,9 +64,49 @@ class GenerateSchemaPropertiesTest extends TestCase
             ],
         ];
 
-        foreach ($schema->properties as $key => $property){
-            $this->assertName($property, $expectedProperties[$key]);
-        }
+        $this->assertSchemaProperties($schema, $expectedProperties);
+
+        $this->assertTrue(true);
+    }
+
+    public function test_generate_with_custom_property(): void
+    {
+        $analysis = $this->analysisFromFixtures([FilesForm::class]);
+        $analysis->process([
+            new MergeIntoOpenApi(),
+            new MergeIntoComponents(),
+            new AugmentSchemas(),
+        ]);
+
+        $schema = $analysis->getSchemaForSource(FilesForm::class);
+
+        $this->assertCount(1, $schema->properties);
+
+        $analysis->process(new GenerateSchemaProperties());
+
+        $this->assertCount(4, $schema->properties);
+
+        $expectedProperties = [
+            [
+                'property' => 'company',
+                'type' => 'string',
+            ],
+            [
+                'property' => 'phone',
+                'type' => 'string',
+            ],
+            [
+                'property' => 'email',
+                'type' => 'string',
+            ],
+            [
+                'property' => 'files[]',
+                'type' => 'array',
+                'items' => new Items(type: 'string', format: 'binary')
+            ],
+        ];
+
+        $this->assertSchemaProperties($schema, $expectedProperties);
 
         $this->assertTrue(true);
     }
@@ -99,8 +142,23 @@ class GenerateSchemaPropertiesTest extends TestCase
 
     protected function assertName(Property $property, array $expectedValues): void
     {
-        foreach ($expectedValues as $key => $val) {
-            $this->assertSame($val, $property->$key, "Property $property->property -> $key expect $val");
+        foreach ($expectedValues as $key => $expected) {
+            $actual = $property->$key;
+
+            if ($expected instanceof \JsonSerializable){
+                $expected = json_encode($expected);
+            }
+            if ($actual instanceof \JsonSerializable){
+                $actual = json_encode($actual);
+            }
+            $this->assertSame($expected, $actual, "Property $property->property -> $key expect $expected");
+        }
+    }
+
+    protected function assertSchemaProperties(Schema $schema, array $expectedValues): void
+    {
+        foreach ($schema->properties as $key => $property){
+            $this->assertName($property, $expectedValues[$key]);
         }
     }
 
