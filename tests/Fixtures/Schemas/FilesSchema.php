@@ -1,13 +1,13 @@
 <?php
 
-namespace SenSkysh\SwaggerProcessors\Tests\Fixtures;
+namespace SenSkysh\SwaggerProcessors\Tests\Fixtures\Schemas;
 
 use OpenApi\Attributes\Items;
 use OpenApi\Attributes\Property;
 use SenSkysh\SwaggerProcessors\Attributes\GenerateSchema;
 
 #[GenerateSchema]
-class FilesForm
+class FilesSchema
 {
     public function __construct(
         public string $company,

@@ -1,14 +1,16 @@
 <?php
 
-namespace SenSkysh\SwaggerProcessors\Tests\Fixtures;
+namespace SenSkysh\SwaggerProcessors\Tests\Fixtures\Schemas;
 
 use SenSkysh\SwaggerProcessors\Attributes\GenerateSchema;
 
 #[GenerateSchema]
-class PaginationMeta
+class PaginationMetaSchema
 {
+    public int $perPage;
+
     public function __construct(
-        public int  $perPage,
+        int         $perPage,
         public int  $currentPage,
         public int  $lastPage,
         public int  $total,
@@ -16,5 +18,6 @@ class PaginationMeta
         public ?int $to = null,
     )
     {
+        $this->perPage = $perPage;
     }
 }

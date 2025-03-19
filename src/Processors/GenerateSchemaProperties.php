@@ -46,10 +46,7 @@ class GenerateSchemaProperties
 
         $classProperties = $rc->getProperties(\ReflectionProperty::IS_PUBLIC);
         foreach ($classProperties as $classProperty) {
-            $propertyContext = $analysis->classes[$classFqn]['properties'][$classProperty->getName()] ?? null;
-            if (!$propertyContext) {
-                continue;
-            }
+            $propertyContext = $analysis->classes[$classFqn]['properties'][$classProperty->getName()];
 
             $schemaProperty = new Property([]);
             $schemaProperty->_context = $propertyContext;
